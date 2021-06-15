@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -6,6 +9,9 @@ void main() {
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
+  List<String> values = ["11", "22"];
+  String value = "";
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,30 +19,52 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Screen 1'),
+      // home: MyHomePage(title: 'Screen 1'),
       debugShowCheckedModeBanner: false,
+      routes: {
+        "/": (context) => ScreenList(values: values),
+        "/home": (context) => MyHomePage(values: values),
+        // "/screen3": (context) => Screen3(value: value),
+      },
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, required this.title}) : super(key: key);
+  MyHomePage({Key? key, required this.values}) : super(key: key);
 
-  final String title;
+  String value = "";
+  List<String> values;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState(this.values);
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String value = "";
+  List<String> values;
+  Map<dynamic, dynamic> data = {};
+  TextEditingController textEditingController = TextEditingController();
+
+  _MyHomePageState(this.values);
+
   @override
   Widget build(BuildContext context) {
-    String value = "";
-    List<String> values = [];
+    int currentIndex = -1;
+
+    if (ModalRoute.of(context)!.settings.arguments != null) {
+      data =
+          ModalRoute.of(context)!.settings.arguments as Map<dynamic, dynamic>;
+      textEditingController = TextEditingController()
+        ..text = data["data"].toString();
+      currentIndex = data["index"];
+    }
+
+    print(value);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text("My App"),
       ),
       body: Center(
         child: Padding(
@@ -45,6 +73,7 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               TextField(
+                controller: textEditingController,
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (text) {
                   value = text;
@@ -55,7 +84,11 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               TextButton(
                   onPressed: () {
-                    values.add(value);
+                    if (currentIndex != -1) {
+                      this.values[currentIndex] = value;
+                    } else {
+                      values.add(value);
+                    }
                     Navigator.of(context).push(MaterialPageRoute(
                         builder: (context) => ScreenList(values: values)));
                   },
@@ -70,50 +103,13 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-}
 
-class Screen2 extends StatelessWidget {
-  // const Screen2({Key? key}) : super(key: key);
-  String value;
-  Screen2({required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Screen2"),
-      ),
-      body: Center(
-        child: Text("$value"),
-      ),
-    );
-  }
-}
-
-class Screen3 extends StatefulWidget {
-  // const Screen2({Key? key}) : super(key: key);
-  String value;
-  Screen3({required this.value});
-
-  @override
-  _Screen3State createState() => _Screen3State(value);
-}
-
-class _Screen3State extends State<Screen3> {
-  String value;
-  _Screen3State(this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Screen3"),
-      ),
-      body: Center(
-        child: Text("$value"),
-      ),
-    );
-  }
+  // @override
+  // void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  //   super.debugFillProperties(properties);
+  //   properties.add(DiagnosticsProperty('data', data));
+  //   properties.add(DiagnosticsProperty('data', data));
+  // }
 }
 
 class ScreenList extends StatefulWidget {
@@ -132,15 +128,49 @@ class _ScreenListState extends State<ScreenList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Screen List"),
-        ),
-        body: ListView.builder(
-            itemCount: this.values.length,
-            itemBuilder: (context, index) {
-              return ListTile(
+      appBar: AppBar(
+        title: Text("Screen List"),
+      ),
+      body: ListView.builder(
+          padding: EdgeInsets.all(12),
+          itemCount: this.values.length,
+          itemBuilder: (context, index) {
+            return InkWell(
+              onTap: () {
+                Navigator.pushNamed(context, "/home",
+                    arguments: {"index": index, "data": this.values[index]});
+                // Navigator.of(context).push(MaterialPageRoute(
+                //     builder: (context) => MyHomePage(values: this.values)));
+              },
+              child: ListTile(
                 title: Text(values[index]),
-              );
-            }));
+                trailing: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    IconButton(
+                        onPressed: () {
+                          setState(() {
+                            this.values.removeAt(index);
+                          });
+                          // Navigator.of(context).push(MaterialPageRoute(
+                          //     builder: (context) =>
+                          //         MyHomePage(values: this.values)));
+                        },
+                        icon: Icon(Icons.delete)),
+                  ],
+                ),
+              ),
+            );
+          }),
+      floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => MyHomePage(
+                      values: this.values,
+                    )));
+          },
+          child: Icon(CupertinoIcons.add_circled)),
+    );
   }
 }
